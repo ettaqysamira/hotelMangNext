@@ -1,0 +1,314 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  MANAGER
+  RECEPTIONIST
+  GUEST
+  MAINTENANCE
+  ACCOUNTANT
+}
+
+enum GuestStatus {
+  PENDING_CHECKIN
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum RoomType {
+  DORM_FEMALE
+  DORM_MALE
+  DORM_MIXED
+  PRIVATE_ROOM
+}
+
+enum BedStatus {
+  AVAILABLE
+  OCCUPIED
+  CLEANING_REQUIRED
+  MAINTENANCE
+  RESERVED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+}
+
+enum ComplaintCategory {
+  NETWORK
+  PLUMBING
+  ELECTRICITY
+  CLEANLINESS
+  LOCKER
+  NOISE
+  OTHER
+}
+
+enum ComplaintPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ComplaintStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  TRIAL
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         Role          @default(GUEST)
+  avatarUrl    String?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  organizationId String?
+  
+  // Relations
+  refreshTokens    RefreshToken[]
+  guestProfile     GuestProfile?
+  managedHostels   Hostel[]         @relation("HostelManagers")
+  assignedTickets  Complaint[]      @relation("AssignedAgent")
+  auditLogs        AuditLog[]
+  notifications    Notification[]
+  organization     Organization?     @relation(fields: [organizationId], references: [id])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model GuestProfile {
+  id               String       @id @default(uuid())
+  userId           String       @unique
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  passportNumber   String?
+  nationality      String?
+  dateOfBirth      DateTime?
+  status           GuestStatus  @default(PENDING_CHECKIN)
+  preferences      Json?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  // Relations
+  bookings         Booking[]
+  complaints       Complaint[]
+}
+
+model Hostel {
+  id          String   @id @default(uuid())
+  name        String
+  address     String
+  city        String
+  phone       String?
+  email       String?
+  description String?
+  organizationId String?
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  managers    User[]   @relation("HostelManagers")
+  rooms       Room[]
+}
+
+model Room {
+  id            String   @id @default(uuid())
+  roomNumber    String
+  floor         Int
+  type          RoomType @default(DORM_MIXED)
+  pricePerNight Decimal  @db.Decimal(10, 2)
+  amenities     String[]
+  hostelId      String
+  hostel        Hostel   @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  beds          Bed[]
+  bookings      Booking[]
+}
+
+model Bed {
+  id         String    @id @default(uuid())
+  bedNumber  String
+  status     BedStatus @default(AVAILABLE)
+  roomId     String
+  room       Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  bookings   Booking[]
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  guestId       String
+  guest         GuestProfile  @relation(fields: [guestId], references: [id])
+  roomId        String
+  room          Room          @relation(fields: [roomId], references: [id])
+  bedId         String?
+  bed           Bed?          @relation(fields: [bedId], references: [id])
+  checkInDate   DateTime
+  checkOutDate  DateTime
+  status        BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  totalPrice    Decimal       @db.Decimal(10, 2)
+  qrCodeUrl     String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  payments      Payment[]
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  bookingId       String
+  booking         Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount          Decimal       @db.Decimal(10, 2)
+  dueDate         DateTime
+  paymentDate     DateTime?
+  paymentMethod   PaymentMethod?
+  status          PaymentStatus @default(UNPAID)
+  invoiceNumber   String        @unique
+  invoiceUrl      String?
+  transactionRef  String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Complaint {
+  id              String            @id @default(uuid())
+  title           String
+  description     String
+  category        ComplaintCategory @default(OTHER)
+  priority        ComplaintPriority @default(MEDIUM)
+  status          ComplaintStatus   @default(OPEN)
+  guestId         String
+  guest           GuestProfile      @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  assignedAgentId String?
+  assignedAgent   User?             @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  ipAddress String?
+  userAgent String?
+  details   Json?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  type      String
+  createdAt DateTime @default(now())
+}
+
+model Organization {
+  id           String             @id @default(uuid())
+  name         String
+  slug         String             @unique
+  logo         String?
+  plan         SubscriptionPlan   @default(FREE)
+  status       OrganizationStatus @default(ACTIVE)
+  maxHostels   Int                @default(1)
+  maxRooms     Int                @default(10)
+  maxBookings  Int                @default(100)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  
+  // Relations
+  hostels      Hostel[]
+  users        User[]
+  subscription Subscription?
+}
+
+model Subscription {
+  id                  String             @id @default(uuid())
+  organizationId      String             @unique
+  organization        Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan                SubscriptionPlan
+  status              SubscriptionStatus @default(TRIAL)
+  startDate           DateTime           @default(now())
+  endDate             DateTime?
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+}

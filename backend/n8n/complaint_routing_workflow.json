@@ -1,0 +1,133 @@
+{
+  "name": "AI Complaint Routing with Email",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhooks/complaints",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "id": "webhook-trigger",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api-inference.huggingface.co/models/facebook/bart-large-mnli",
+        "authentication": "none",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.body.hfApiKey || 'hf_placeholder' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "inputs",
+              "value": "={{ $json.body.description }}"
+            },
+            {
+              "name": "parameters",
+              "value": "={ \"candidate_labels\": [\"NETWORK\", \"PLUMBING\", \"ELECTRICITY\", \"CLEANLINESS\", \"LOCKER\", \"NOISE\", \"OTHER\"] }"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [220, 0],
+      "id": "hf-classifier",
+      "name": "Hugging Face Classifier"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=http://localhost:5000/api/complaints/{{ $('Webhook').item.json.body.complaintId }}/auto-assign",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "category",
+              "value": "={{ $json.labels[0] }}"
+            },
+            {
+              "name": "priority",
+              "value": "={{ $json.scores[0] > 0.8 ? 'HIGH' : 'MEDIUM' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [440, 0],
+      "id": "backend-callback",
+      "name": "Update Database via API"
+    },
+    {
+      "parameters": {
+        "fromEmail": "no-reply@smarthostel.com",
+        "toEmail": "={{ $('Webhook').item.json.body.guestEmail }}",
+        "subject": "=Smart Hostel : Votre réclamation {{ $('Webhook').item.json.body.complaintId.substring(0,8) }} a été prise en compte",
+        "html": "=Bonjour <b>{{ $('Webhook').item.json.body.guestName }}</b>,<br><br>Votre réclamation pour <b>\"{{ $('Webhook').item.json.body.title }}\"</b> a été classée automatiquement en catégorie <b>{{ $node['Hugging Face Classifier'].json.labels[0] }}</b>.<br>Un technicien de maintenance a été assigné pour résoudre la panne.<br><br>Cordialement,<br>L'équipe Smart Hostel",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [660, 0],
+      "id": "send-email",
+      "name": "Send Email Notification"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Hugging Face Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hugging Face Classifier": {
+      "main": [
+        [
+          {
+            "node": "Update Database via API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Database via API": {
+      "main": [
+        [
+          {
+            "node": "Send Email Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
