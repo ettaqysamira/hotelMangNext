@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../config/db';
+import { randomUUID } from 'crypto';
 
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY_DAYS = 7;
@@ -16,7 +17,7 @@ const generateAccessToken = (userId: string, email: string, role: string, firstN
 
 const generateRefreshToken = (userId: string, email: string, role: string, firstName: string, lastName: string, organizationId?: string | null) => {
   return jwt.sign(
-    { id: userId, email, role, firstName, lastName, organizationId },
+    { id: userId, email, role, firstName, lastName, organizationId, jti: randomUUID() },
     process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret',
     { expiresIn: `${REFRESH_TOKEN_EXPIRY_DAYS}d` }
   );
