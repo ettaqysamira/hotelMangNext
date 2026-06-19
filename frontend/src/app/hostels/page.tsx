@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { api } from '../../lib/api';
+import { api, UnauthorizedError } from '../../lib/api';
+import { cacheOverpassFailure, getCachedOverpassData } from '../../lib/overpass-cache';
 import { useAuth } from '../../hooks/use-auth';
 import { 
   Search, Bed, MapPin, LogOut, RefreshCw, Compass, ArrowRight,
@@ -39,18 +40,25 @@ export default function HostelsSearch() {
 );
 out body 40;`;
 
-      const response = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        body: 'data=' + encodeURIComponent(overpassQuery),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'Roomify/1.0 (student project)'
-        }
+      const data = await getCachedOverpassData(async () => {
+        const response = await fetch('https://overpass-api.de/api/interpreter', {
+          method: 'POST',
+          body: 'data=' + encodeURIComponent(overpassQuery),
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Roomify/1.0 (student project)'
+          }
+        });
+
+        if (!response.ok) throw new Error('Overpass API indisponible');
+        return response.json();
       });
 
-      if (!response.ok) throw new Error('Overpass API indisponible');
+      if (!data) {
+        setOsmHostels([]);
+        return;
+      }
 
-      const data = await response.json();
       const elements: any[] = data.elements || [];
 
       // Map OSM elements to hostel objects
@@ -85,6 +93,8 @@ out body 40;`;
       setOsmHostels(osmMapped);
     } catch (err: any) {
       console.warn('Overpass error:', err.message);
+      cacheOverpassFailure();
+      setOsmHostels([]);
     } finally {
       setLoadingOsm(false);
     }
@@ -92,6 +102,8 @@ out body 40;`;
 
   // Fetch Hostels on load: Local + External (OSM)
   useEffect(() => {
+    let isMounted = true;
+
     const fetchLocalData = async () => {
       setLoadingLocal(true);
       try {
@@ -100,9 +112,18 @@ out body 40;`;
           return;
         }
         const res = await api.get('/hostels');
+        if (!isMounted) return;
         setLocalHostels(res.data.hostels || []);
       } catch (err: any) {
+        if (!isMounted) return;
         console.error('Fetch local error:', err);
+        if (err instanceof UnauthorizedError) {
+          setErrorMsg(err.message);
+          logout();
+          router.push('/auth/login');
+          return;
+        }
+
         setErrorMsg('Impossible de charger les hôtels de la base de données locale.');
       } finally {
         setLoadingLocal(false);
@@ -111,6 +132,9 @@ out body 40;`;
 
     fetchLocalData();
     fetchOverpassHostels();
+    return () => {
+      isMounted = false;
+    };
   }, [fetchOverpassHostels, isAuthenticated]);
 
   // Merge local and OSM hostels (deduplicate by name)

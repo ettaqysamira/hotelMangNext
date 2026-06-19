@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send, User } from 'lucide-react';
-import { api } from '../lib/api';
+import { api, UnauthorizedError } from '../lib/api';
 import { useAuth } from '../hooks/use-auth';
 
 interface ChatMessage {
@@ -60,9 +60,17 @@ export const ChatBot: React.FC = () => {
 
       setMessages(prev => [...prev, { role: 'assistant', content: response.reply }]);
     } catch (error) {
+      if (error instanceof UnauthorizedError) {
+        setMessages(prev => [
+          ...prev,
+          { role: 'assistant', content: 'Session expirée ou token invalide. Veuillez vous reconnecter.' }
+        ]);
+        return;
+      }
+
       setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: "Désolé, je rencontre des difficultés pour me connecter au serveur d'intelligence artificielle. Veuillez réessayer." }
+        { role: 'assistant', content: "Désolé, je rencontre des difficultés pour traiter votre demande actuellement. Veuillez réessayer." }
       ]);
     } finally {
       setIsTyping(false);

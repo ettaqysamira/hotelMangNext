@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
+const frontendRoot = __dirname;
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  turbopack: {
+    root: frontendRoot
+  }
 };
 
 export default nextConfig;

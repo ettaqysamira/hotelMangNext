@@ -1,5 +1,12 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+export class UnauthorizedError extends Error {
+  constructor(message = 'Session expirée ou token invalide. Veuillez vous reconnecter.') {
+    super(message);
+    this.name = 'UnauthorizedError';
+  }
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -34,6 +41,11 @@ class ApiClient {
     };
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+
+    if (response.status === 401) {
+      this.setToken(null);
+      throw new UnauthorizedError();
+    }
 
     // Handle 204 No Content
     if (response.status === 204) {

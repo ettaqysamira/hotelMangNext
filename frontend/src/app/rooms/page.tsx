@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { api } from '../../lib/api';
+import { api, UnauthorizedError } from '../../lib/api';
+import { cacheOverpassFailure, getCachedOverpassData } from '../../lib/overpass-cache';
 import { useAuth } from '../../hooks/use-auth';
 import { 
   Search, Bed, MapPin, Users, LogOut, SlidersHorizontal, Sun, Moon, 
@@ -75,18 +76,25 @@ function RoomsSearchContent() {
 );
 out body 40;`;
 
-      const response = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        body: 'data=' + encodeURIComponent(overpassQuery),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'Roomify/1.0 (student project)'
-        }
+      const data = await getCachedOverpassData(async () => {
+        const response = await fetch('https://overpass-api.de/api/interpreter', {
+          method: 'POST',
+          body: 'data=' + encodeURIComponent(overpassQuery),
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'Roomify/1.0 (student project)'
+          }
+        });
+
+        if (!response.ok) throw new Error('Overpass API indisponible');
+        return response.json();
       });
 
-      if (!response.ok) throw new Error('Overpass API indisponible');
+      if (!data) {
+        setOsmHostels([]);
+        return;
+      }
 
-      const data = await response.json();
       const elements: any[] = data.elements || [];
 
       const osmMapped = elements
@@ -117,11 +125,14 @@ out body 40;`;
       setOsmHostels(osmMapped);
     } catch (err: any) {
       console.warn('Overpass error on rooms page:', err.message);
+      cacheOverpassFailure();
     }
   }, []);
 
   // Fetch Hostels and Rooms on load
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
       if (!isAuthenticated) {
         setLoading(false);
@@ -134,10 +145,19 @@ out body 40;`;
           api.get('/hostels'),
           api.get('/rooms')
         ]);
+        if (!isMounted) return;
         setLocalHostels(hostelsRes.data.hostels || []);
         setRooms(roomsRes.data.rooms || []);
       } catch (err: any) {
+        if (!isMounted) return;
         console.error('Fetch error:', err);
+        if (err instanceof UnauthorizedError) {
+          setErrorMsg(err.message);
+          logout();
+          router.push('/auth/login');
+          return;
+        }
+
         setErrorMsg(err.message || 'Impossible de récupérer les données du serveur local.');
       } finally {
         setLoading(false);
@@ -146,6 +166,9 @@ out body 40;`;
 
     fetchData();
     fetchOverpassHostels();
+    return () => {
+      isMounted = false;
+    };
   }, [fetchOverpassHostels, isAuthenticated]);
 
   // Fetch exchange rates
@@ -419,9 +442,16 @@ out body 40;`;
       const invoice = `INV-EXT-${Math.floor(1000 + Math.random() * 9000)}`;
       const params = new URLSearchParams({
         paymentId: `mock-pay-${Math.random()}`,
+        bookingId: invoice,
         amount: total.toFixed(2),
         invoiceNumber: invoice,
         hostelName: selectedRoomForBooking.hostel.name,
+        hostelCity: selectedRoomForBooking.hostel.city,
+        hostelAddress: selectedRoomForBooking.hostel.address || '',
+        roomNumber: selectedRoomForBooking.roomNumber,
+        roomType: selectedRoomForBooking.type,
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
         gateway: 'demo',
         currency: selectedCurrency
       });
