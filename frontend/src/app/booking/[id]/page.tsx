@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
+import { getDemoBookings } from '../../../lib/demo-bookings';
 import { useAuth } from '../../../hooks/use-auth';
 import {
   ArrowLeft, Building2, MapPin, Bed, Calendar, CreditCard, Download,
@@ -58,7 +59,14 @@ export default function BookingDetail() {
   const [error, setError] = useState('');
   const [showQr, setShowQr] = useState(false);
 
+  const resolveDemoBooking = () => {
+    const id = String(params?.id || '');
+    return getDemoBookings().find(item => item.id === id || item.invoiceNumber === id) || null;
+  };
+
   useEffect(() => {
+    let isMounted = true;
+
     if (authLoading) return;
     if (!user) { router.push('/auth/login'); return; }
     if (!params?.id) { setError('ID de réservation manquant'); setLoading(false); return; }
@@ -66,14 +74,28 @@ export default function BookingDetail() {
     const fetchBooking = async () => {
       try {
         const res = await api.get(`/bookings/${params.id}`);
+        if (!isMounted) return;
         setBooking(res.data.booking);
+        setError('');
       } catch (err: any) {
+        if (!isMounted) return;
+        const demoBooking = resolveDemoBooking();
+        if (demoBooking) {
+          setBooking(demoBooking);
+          setError('');
+          return;
+        }
+
         setError(err.message || 'Impossible de charger la réservation.');
       } finally {
+        if (!isMounted) return;
         setLoading(false);
       }
     };
     fetchBooking();
+    return () => {
+      isMounted = false;
+    };
   }, [params?.id, user, authLoading, router]);
 
   if (authLoading || loading) {
@@ -149,6 +171,9 @@ export default function BookingDetail() {
       uid: booking.id
     });
   };
+
+  const qrPayload = booking?.qrCodeUrl || `booking:${booking?.id || params?.id || ''}`;
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(qrPayload)}`;
 
   return (
     <div className="min-h-screen bg-[#080b12] text-[#e8edf5] relative overflow-y-auto">
@@ -401,7 +426,7 @@ export default function BookingDetail() {
       </main>
 
       {/* QR Code Modal */}
-      {showQr && booking.qrCodeUrl && (
+      {showQr && qrPayload && (
         <div className="fixed inset-0 bg-[#080b12]/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0d1117] border border-[#1c2333] p-6 rounded-2xl max-w-sm w-full flex flex-col items-center gap-4 shadow-2xl relative">
             <button onClick={() => setShowQr(false)} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-[#1c2333] text-[#8892a8] hover:text-white transition-colors cursor-pointer">
@@ -409,7 +434,7 @@ export default function BookingDetail() {
             </button>
             <h3 className="font-extrabold text-[#e8edf5] text-sm">QR Code Check-in</h3>
             <div className="p-3 bg-white rounded-2xl border border-[#1c2333]">
-              <img src={booking.qrCodeUrl} alt="QR Code" className="w-48 h-48 rounded-xl" />
+              <img src={qrImageUrl} alt="QR Code" className="w-48 h-48 rounded-xl" />
             </div>
             <p className="text-[10px] text-[#8892a8] text-center">Présentez ce QR Code à la réception pour votre check-in.</p>
           </div>
