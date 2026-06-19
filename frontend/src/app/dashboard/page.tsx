@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { api } from '../../lib/api';
+import { getDemoBookings } from '../../lib/demo-bookings';
 import { 
   Bot, LogOut, User, Bed, ShieldAlert, Sparkles, Camera, Check, X,
   Wrench, Activity, BarChart2, Plus, RefreshCw, AlertTriangle, CheckSquare, Layers, ChevronRight,
@@ -230,16 +231,30 @@ function GuestDashboard({ user, activeTab }: { user: any; activeTab: string }) {
   const fetchGuestData = async () => {
     try {
       const bRes = await api.get('/bookings/my-bookings');
-      setBookings(bRes.data.bookings);
+      if (typeof window === 'undefined') return;
+      const backendBookings = bRes.data.data?.bookings || bRes.data.bookings || [];
+      const demoBookings = getDemoBookings();
+      setBookings([...demoBookings, ...backendBookings]);
 
       const cRes = await api.get('/complaints/my-complaints');
-      setComplaints(cRes.data.complaints);
+      setComplaints(cRes.data.data?.complaints || cRes.data.complaints || []);
     } catch (e) {}
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     fetchGuestData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'bookings') {
+      fetchGuestData();
+    }
+  }, [activeTab]);
 
   const handleComplaint = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -453,7 +468,7 @@ function ReceptionistDashboard({ user, activeTab }: { user: any; activeTab: stri
   const fetchBookings = async () => {
     try {
       const res = await api.get('/bookings');
-      setBookings(res.data.bookings);
+      setBookings(res.data.data?.bookings || res.data.bookings || []);
     } catch (e) {}
   };
 

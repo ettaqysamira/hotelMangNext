@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { api } from '../../../lib/api';
+import { saveDemoBooking } from '../../../lib/demo-bookings';
 
 declare global {
   interface Window {
@@ -103,6 +104,12 @@ function CheckoutPayContent() {
   const [razorpayOrderId, setRazorpayOrderId] = useState('');
   const [razorpayKeyId, setRazorpayKeyId] = useState('');
   const [razorpayAmount, setRazorpayAmount] = useState('');
+  const [hostelCity, setHostelCity] = useState('');
+  const [hostelAddress, setHostelAddress] = useState('');
+  const [roomNumber, setRoomNumber] = useState('');
+  const [roomType, setRoomType] = useState('DORM_MIXED');
+  const [checkInDate, setCheckInDate] = useState('');
+  const [checkOutDate, setCheckOutDate] = useState('');
 
   const [selectedMode, setSelectedMode] = useState<PaymentMode>('upi');
   const [paymentState, setPaymentState] = useState<PaymentState>('idle');
@@ -120,6 +127,12 @@ function CheckoutPayContent() {
     setRazorpayOrderId(searchParams.get('razorpayOrderId') || '');
     setRazorpayKeyId(searchParams.get('razorpayKeyId') || '');
     setRazorpayAmount(searchParams.get('razorpayAmount') || '');
+    setHostelCity(searchParams.get('hostelCity') || '');
+    setHostelAddress(searchParams.get('hostelAddress') || '');
+    setRoomNumber(searchParams.get('roomNumber') || '');
+    setRoomType(searchParams.get('roomType') || 'DORM_MIXED');
+    setCheckInDate(searchParams.get('checkIn') || '');
+    setCheckOutDate(searchParams.get('checkOut') || '');
   }, [searchParams]);
 
   const displayAmount = useMemo(() => formatMoney(amount, currency), [amount, currency]);
@@ -204,8 +217,30 @@ function CheckoutPayContent() {
 
     try {
       const generatedRef = `pay_demo_${Math.floor(100000000 + Math.random() * 900000000)}`;
+      const bookingLabel = bookingId || invoiceNumber || generatedRef;
 
       if (paymentId.startsWith('mock-pay-')) {
+        saveDemoBooking({
+          id: bookingLabel,
+          invoiceNumber,
+          status: 'CONFIRMED',
+          paymentStatus: 'PAID',
+          totalPrice: Number(amount || 0),
+          checkInDate: checkInDate || new Date().toISOString(),
+          checkOutDate: checkOutDate || new Date(Date.now() + 86400000).toISOString(),
+          room: {
+            roomNumber: roomNumber || '201',
+            type: roomType || 'DORM_MIXED',
+            hostel: {
+              name: hostelName,
+              city: hostelCity || '',
+              address: hostelAddress || ''
+            }
+          },
+          bed: null,
+          payments: [{ invoiceNumber, status: 'PAID' }],
+          demo: true
+        });
         setTransactionRef(generatedRef);
         setPaymentState('success');
         return;
