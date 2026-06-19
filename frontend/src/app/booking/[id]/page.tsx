@@ -172,8 +172,8 @@ export default function BookingDetail() {
     });
   };
 
-  const qrPayload = booking?.qrCodeUrl || `booking:${booking?.id || params?.id || ''}`;
-  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(qrPayload)}`;
+  const bookingId = booking?.id || params?.id || '';
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(bookingId)}`;
 
   return (
     <div className="min-h-screen bg-[#080b12] text-[#e8edf5] relative overflow-y-auto">
@@ -426,7 +426,7 @@ export default function BookingDetail() {
       </main>
 
       {/* QR Code Modal */}
-      {showQr && qrPayload && (
+      {showQr && bookingId && (
         <div className="fixed inset-0 bg-[#080b12]/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0d1117] border border-[#1c2333] p-6 rounded-2xl max-w-sm w-full flex flex-col items-center gap-4 shadow-2xl relative">
             <button onClick={() => setShowQr(false)} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-[#1c2333] text-[#8892a8] hover:text-white transition-colors cursor-pointer">

@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { api } from '../../../lib/api';
-import { saveDemoBooking } from '../../../lib/demo-bookings';
+
 
 declare global {
   interface Window {
@@ -217,34 +217,6 @@ function CheckoutPayContent() {
 
     try {
       const generatedRef = `pay_demo_${Math.floor(100000000 + Math.random() * 900000000)}`;
-      const bookingLabel = bookingId || invoiceNumber || generatedRef;
-
-      if (paymentId.startsWith('mock-pay-')) {
-        saveDemoBooking({
-          id: bookingLabel,
-          invoiceNumber,
-          status: 'CONFIRMED',
-          paymentStatus: 'PAID',
-          totalPrice: Number(amount || 0),
-          checkInDate: checkInDate || new Date().toISOString(),
-          checkOutDate: checkOutDate || new Date(Date.now() + 86400000).toISOString(),
-          room: {
-            roomNumber: roomNumber || '201',
-            type: roomType || 'DORM_MIXED',
-            hostel: {
-              name: hostelName,
-              city: hostelCity || '',
-              address: hostelAddress || ''
-            }
-          },
-          bed: null,
-          payments: [{ invoiceNumber, status: 'PAID' }],
-          demo: true
-        });
-        setTransactionRef(generatedRef);
-        setPaymentState('success');
-        return;
-      }
 
       const res = await fetch(`${API_BASE_URL}/payments/webhook`, {
         method: 'POST',

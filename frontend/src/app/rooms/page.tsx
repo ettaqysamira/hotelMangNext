@@ -434,38 +434,29 @@ out body 40;`;
     setBookingLoading(true);
     setErrorMsg('');
 
-    // Check if it's a mock room for external hostel
-    if (selectedRoomForBooking.id.startsWith('mock-ext-')) {
-      await new Promise(resolve => setTimeout(resolve, 800)); // simulate loader
-      const days = Math.max(1, Math.round((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / (1000 * 60 * 60 * 24)));
-      const total = selectedRoomForBooking.pricePerNight * days * exchangeRates[selectedCurrency];
-      const invoice = `INV-EXT-${Math.floor(1000 + Math.random() * 9000)}`;
-      const params = new URLSearchParams({
-        paymentId: `mock-pay-${Math.random()}`,
-        bookingId: invoice,
-        amount: total.toFixed(2),
-        invoiceNumber: invoice,
-        hostelName: selectedRoomForBooking.hostel.name,
-        hostelCity: selectedRoomForBooking.hostel.city,
-        hostelAddress: selectedRoomForBooking.hostel.address || '',
-        roomNumber: selectedRoomForBooking.roomNumber,
-        roomType: selectedRoomForBooking.type,
-        checkIn: checkInDate,
-        checkOut: checkOutDate,
-        gateway: 'demo',
-        currency: selectedCurrency
-      });
-      router.push(`/checkout/pay?${params.toString()}`);
-      return;
-    }
-
     try {
-      // 1. Create Booking draft
-      const bookingRes = await api.post('/bookings', {
-        roomId: selectedRoomForBooking.id,
-        checkIn: checkInDate,
-        checkOut: checkOutDate
-      });
+      let bookingRes;
+
+      // External hostel: create booking via dedicated endpoint
+      if (selectedRoomForBooking.id.startsWith('mock-ext-')) {
+        bookingRes = await api.post('/bookings/external', {
+          hostelName: selectedRoomForBooking.hostel.name,
+          hostelCity: selectedRoomForBooking.hostel.city,
+          hostelAddress: selectedRoomForBooking.hostel.address || '',
+          roomNumber: selectedRoomForBooking.roomNumber,
+          roomType: selectedRoomForBooking.type,
+          pricePerNight: selectedRoomForBooking.pricePerNight,
+          checkIn: checkInDate,
+          checkOut: checkOutDate
+        });
+      } else {
+        // 1. Create Booking draft
+        bookingRes = await api.post('/bookings', {
+          roomId: selectedRoomForBooking.id,
+          checkIn: checkInDate,
+          checkOut: checkOutDate
+        });
+      }
 
       const booking = bookingRes.data.booking;
 

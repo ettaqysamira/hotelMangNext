@@ -217,7 +217,7 @@ model Booking {
   status        BookingStatus @default(PENDING)
   paymentStatus PaymentStatus @default(UNPAID)
   totalPrice    Decimal       @db.Decimal(10, 2)
-  qrCodeUrl     String?
+  qrCodeUrl     String?       @db.Text
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 

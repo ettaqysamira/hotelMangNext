@@ -281,6 +281,101 @@ export const checkInBooking = async (req: AuthenticatedRequest, res: Response, n
   }
 };
 
+export const createExternalBooking = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { hostelName, hostelCity, hostelAddress, roomNumber, roomType, pricePerNight, checkIn, checkOut } = req.body;
+
+    if (!req.user) {
+      res.status(401).json({ status: 'error', message: 'Non autorisé.' });
+      return;
+    }
+
+    const guestProfile = await prisma.guestProfile.findUnique({
+      where: { userId: req.user.id }
+    });
+
+    if (!guestProfile) {
+      res.status(403).json({ status: 'error', message: 'Seuls les profils voyageurs peuvent effectuer des réservations.' });
+      return;
+    }
+
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+
+    if (checkInDate >= checkOutDate) {
+      res.status(400).json({ status: 'error', message: 'La date de départ doit être supérieure à la date d\'arrivée.' });
+      return;
+    }
+
+    const diffDays = Math.max(1, Math.ceil(Math.abs(checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)));
+    const totalPrice = Number(pricePerNight) * diffDays;
+
+    const result = await prisma.$transaction(async (tx) => {
+      let hostel = await tx.hostel.findFirst({
+        where: { name: hostelName, city: hostelCity }
+      });
+      if (!hostel) {
+        hostel = await tx.hostel.create({
+          data: { name: hostelName, city: hostelCity, address: hostelAddress || '' }
+        });
+      }
+
+      const room = await tx.room.create({
+        data: {
+          roomNumber: roomNumber || 'EXT-1',
+          floor: 1,
+          type: roomType || 'DORM_MIXED',
+          pricePerNight,
+          amenities: [],
+          hostelId: hostel.id
+        }
+      });
+
+      const bed = await tx.bed.create({
+        data: { bedNumber: '1', status: BedStatus.AVAILABLE, roomId: room.id }
+      });
+
+      const booking = await tx.booking.create({
+        data: {
+          guestId: guestProfile.id,
+          roomId: room.id,
+          bedId: bed.id,
+          checkInDate,
+          checkOutDate,
+          totalPrice,
+          status: BookingStatus.PENDING,
+          paymentStatus: PaymentStatus.UNPAID
+        },
+        include: { room: { include: { hostel: true } }, bed: true }
+      });
+
+      const invoiceNumber = `INV-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const payment = await tx.payment.create({
+        data: {
+          bookingId: booking.id,
+          amount: totalPrice,
+          dueDate: checkInDate,
+          invoiceNumber,
+          status: PaymentStatus.UNPAID
+        }
+      });
+
+      return { booking, payment };
+    });
+
+    res.status(201).json({
+      status: 'success',
+      data: {
+        booking: result.booking,
+        paymentId: result.payment.id,
+        invoiceNumber: result.payment.invoiceNumber
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getMyBookings = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (!req.user) {
