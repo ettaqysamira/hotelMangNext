@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { CloudSun, Sun, Cloud, CloudRain, CloudSnow, CloudLightning } from 'lucide-react';
 
-const OWM_KEY = 'YOUR_FREE_OWM_KEY';
+const OWM_KEY = '1c9870e81d86eb00ce6e7de7bf8f5bf7';
 
 interface WeatherData {
   temp: number;
