@@ -1,5 +1,37 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Quick Setup
+
+After cloning the repo, use this checklist:
+
+1. Install MySQL and make sure it is running locally.
+2. In `backend`, create `.env` from `.env.example` and keep `DATABASE_URL` pointing to your MySQL instance.
+3. Install dependencies in both apps:
+
+```bash
+cd backend && npm install
+cd ../frontend && npm install
+```
+
+4. Sync the database from `backend`:
+
+```bash
+npm run prisma:push
+```
+
+5. Start the backend and frontend in two terminals:
+
+```bash
+cd backend && npm start
+cd frontend && npm run dev
+```
+
+6. Open the app at `http://localhost:3000`.
+
+Optional:
+- If you want seeded sample data, run the backend seed script after the database is ready.
+- If you want the AI/chatbot features, set `HUGGING_FACE_API_KEY` in `backend/.env`.
+
 ## Getting Started
 
 First, run the development server:
