@@ -4,6 +4,16 @@ import prisma from '../config/db';
 import { RoomType, BedStatus, BookingStatus } from '@prisma/client';
 import { generateTextEmbedding, calculateCosineSimilarity } from '../services/huggingface.service';
 
+const toAmenitiesList = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => String(item).trim())
+    .filter((item) => item.length > 0);
+};
+
 export const createRoom = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { hostelId, roomNumber, floor, type, pricePerNight, amenities, capacity } = req.body;
@@ -27,7 +37,7 @@ export const createRoom = async (req: AuthenticatedRequest, res: Response, next:
           floor: Number(floor),
           type: type as RoomType,
           pricePerNight: Number(pricePerNight),
-          amenities: amenities || []
+          amenities: toAmenitiesList(amenities)
         }
       });
 
@@ -71,16 +81,18 @@ export const getAllRooms = async (req: AuthenticatedRequest, res: Response, next
     const { hostelId, type, priceMax, amenities, checkIn, checkOut, includeOccupancy } = req.query;
     const shouldIncludeOccupancy = String(includeOccupancy || '') === 'true';
     const occupancyDate = new Date();
+    const amenitiesList = amenities
+      ? String(amenities)
+          .split(',')
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0)
+      : [];
 
     // Base conditions
     const where: any = {};
     if (hostelId) where.hostelId = String(hostelId);
     if (type) where.type = type as RoomType;
     if (priceMax) where.pricePerNight = { lte: Number(priceMax) };
-    if (amenities) {
-      const amenitiesList = String(amenities).split(',');
-      where.amenities = { hasEvery: amenitiesList };
-    }
 
     // Fetch rooms with beds
     let rooms = await prisma.room.findMany({
@@ -114,6 +126,14 @@ export const getAllRooms = async (req: AuthenticatedRequest, res: Response, next
           : true
       }
     });
+
+    // MySQL stores amenities as JSON; filter in memory for "contains all" behavior.
+    if (amenitiesList.length > 0) {
+      rooms = rooms.filter((room) => {
+        const roomAmenities = toAmenitiesList(room.amenities);
+        return amenitiesList.every((requiredAmenity) => roomAmenities.includes(requiredAmenity));
+      });
+    }
 
     if (shouldIncludeOccupancy) {
       rooms = rooms.map((room: any) => ({
@@ -231,7 +251,7 @@ export const updateRoom = async (req: AuthenticatedRequest, res: Response, next:
         floor: floor ? Number(floor) : undefined,
         type: type ? (type as RoomType) : undefined,
         pricePerNight: pricePerNight ? Number(pricePerNight) : undefined,
-        amenities: amenities || undefined
+        amenities: amenities === undefined ? undefined : toAmenitiesList(amenities)
       }
     });
 
@@ -306,7 +326,8 @@ export const recommendRooms = async (req: AuthenticatedRequest, res: Response, n
     const queryEmbedding = await generateTextEmbedding(preferences);
 
     const recommendations = await Promise.all(rooms.map(async (room) => {
-      const roomDesc = `Room number ${room.roomNumber} is a ${room.type} located at ${room.hostel.name} in ${room.hostel.city}. Price is ${room.pricePerNight} EUR per night. Amenities: ${room.amenities.join(', ')}.`;
+      const amenitiesText = toAmenitiesList(room.amenities).join(', ');
+      const roomDesc = `Room number ${room.roomNumber} is a ${room.type} located at ${room.hostel.name} in ${room.hostel.city}. Price is ${room.pricePerNight} EUR per night. Amenities: ${amenitiesText}.`;
       
       const roomEmbedding = await generateTextEmbedding(roomDesc);
       const similarity = calculateCosineSimilarity(queryEmbedding, roomEmbedding);

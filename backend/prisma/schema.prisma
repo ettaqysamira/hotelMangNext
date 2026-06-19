@@ -1,5 +1,5 @@
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -131,7 +131,7 @@ model User {
 
 model RefreshToken {
   id        String   @id @default(uuid())
-  token     String   @unique
+  token     String   @unique @db.VarChar(512)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
@@ -180,7 +180,7 @@ model Room {
   floor         Int
   type          RoomType @default(DORM_MIXED)
   pricePerNight Decimal  @db.Decimal(10, 2)
-  amenities     String[]
+  amenities     Json
   hostelId      String
   hostel        Hostel   @relation(fields: [hostelId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())

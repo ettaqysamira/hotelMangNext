@@ -1,6 +1,16 @@
 import dotenv from 'dotenv';
 import prisma from '../config/db';
 
+const toAmenitiesList = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => String(item).trim())
+    .filter((item) => item.length > 0);
+};
+
 dotenv.config();
 
 const HF_API_KEY = process.env.HUGGING_FACE_API_KEY || '';
@@ -348,8 +358,9 @@ async function getPricingData(): Promise<string> {
 
     for (const room of rooms) {
       response += `• **Chambre ${room.roomNumber}** (${typeLabel[room.type] || room.type}) : **${room.pricePerNight}€** /nuit\n`;
-      if (room.amenities.length > 0) {
-        response += `  Équipements : ${room.amenities.join(', ')}\n`;
+      const amenities = toAmenitiesList(room.amenities);
+      if (amenities.length > 0) {
+        response += `  Équipements : ${amenities.join(', ')}\n`;
       }
       response += `\n`;
     }
