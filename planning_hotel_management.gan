@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Hotel Management Next" company="" webLink="http://localhost:3000" view-date="2026-04-23" view-index="0" gantt-divider-location="370" resource-divider-location="300" version="3.3.3316" locale="fr_FR">
+  <description><![CDATA[Planning Gantt du projet Hotel Management Next, du 23 avril 2026 au 23 juin 2026.]]></description>
+  <view zooming-state="default:5" id="gantt-chart"/>
+  <view id="resource-table">
+    <field id="0" name="Nom" width="210" order="0"/>
+    <field id="1" name="Rôle par défaut" width="120" order="1"/>
+  </view>
+  <calendars>
+    <day-types>
+      <day-type id="0"/>
+      <day-type id="1"/>
+      <calendar id="1" name="default">
+        <default-week sun="1" mon="0" tue="0" wed="0" thu="0" fri="0" sat="1"/>
+        <only-show-weekends value="false"/>
+        <overriden-day-types/>
+        <days/>
+      </calendar>
+    </day-types>
+  </calendars>
+  <tasks empty-milestones="true">
+    <taskproperties>
+      <taskproperty id="tpd0" name="type" type="default" valuetype="icon"/>
+      <taskproperty id="tpd1" name="priority" type="default" valuetype="icon"/>
+      <taskproperty id="tpd2" name="info" type="default" valuetype="icon"/>
+      <taskproperty id="tpd3" name="name" type="default" valuetype="text"/>
+      <taskproperty id="tpd4" name="begindate" type="default" valuetype="date"/>
+      <taskproperty id="tpd5" name="enddate" type="default" valuetype="date"/>
+      <taskproperty id="tpd6" name="duration" type="default" valuetype="int"/>
+      <taskproperty id="tpd7" name="completion" type="default" valuetype="int"/>
+      <taskproperty id="tpd8" name="coordinator" type="default" valuetype="text"/>
+      <taskproperty id="tpd9" name="predecessorsr" type="default" valuetype="text"/>
+    </taskproperties>
+    <task id="1" name="Cadrage et analyse du besoin" color="#8cb6ce" meeting="false" start="2026-04-23" duration="7" complete="100" expand="true">
+      <task id="2" name="Définition du périmètre fonctionnel" color="#8cb6ce" meeting="false" start="2026-04-23" duration="2" complete="100"/>
+      <task id="3" name="Identification des rôles utilisateurs" color="#8cb6ce" meeting="false" start="2026-04-27" duration="2" complete="100"/>
+      <task id="4" name="Choix techniques et architecture" color="#8cb6ce" meeting="false" start="2026-04-29" duration="3" complete="100"/>
+    </task>
+    <task id="5" name="Conception de la base de données" color="#c6a477" meeting="false" start="2026-05-04" duration="7" complete="100" expand="true">
+      <task id="6" name="Modélisation Prisma des entités" color="#c6a477" meeting="false" start="2026-05-04" duration="3" complete="100"/>
+      <task id="7" name="Relations utilisateurs, réservations, chambres" color="#c6a477" meeting="false" start="2026-05-07" duration="2" complete="100"/>
+      <task id="8" name="Préparation seed et données de démonstration" color="#c6a477" meeting="false" start="2026-05-11" duration="2" complete="100"/>
+    </task>
+    <task id="9" name="Développement backend API" color="#9fc27b" meeting="false" start="2026-05-13" duration="13" complete="100" expand="true">
+      <task id="10" name="Configuration Express, Prisma et MySQL" color="#9fc27b" meeting="false" start="2026-05-13" duration="3" complete="100"/>
+      <task id="11" name="Authentification JWT et rôles" color="#9fc27b" meeting="false" start="2026-05-18" duration="3" complete="100"/>
+      <task id="12" name="API auberges, chambres et lits" color="#9fc27b" meeting="false" start="2026-05-21" duration="3" complete="100"/>
+      <task id="13" name="API réservations, paiements et réclamations" color="#9fc27b" meeting="false" start="2026-05-26" duration="4" complete="100"/>
+    </task>
+    <task id="14" name="Développement frontend Next.js" color="#9ba6d9" meeting="false" start="2026-05-25" duration="15" complete="100" expand="true">
+      <task id="15" name="Pages publiques et navigation" color="#9ba6d9" meeting="false" start="2026-05-25" duration="3" complete="100"/>
+      <task id="16" name="Login et inscription voyageur" color="#9ba6d9" meeting="false" start="2026-05-28" duration="3" complete="100"/>
+      <task id="17" name="Dashboard voyageur" color="#9ba6d9" meeting="false" start="2026-06-02" duration="3" complete="100"/>
+      <task id="18" name="Dashboard réceptionniste" color="#9ba6d9" meeting="false" start="2026-06-05" duration="2" complete="100"/>
+      <task id="19" name="Dashboard manager et super admin" color="#9ba6d9" meeting="false" start="2026-06-09" duration="3" complete="100"/>
+      <task id="20" name="Dashboard maintenance et comptabilité" color="#9ba6d9" meeting="false" start="2026-06-12" duration="2" complete="100"/>
+    </task>
+    <task id="21" name="Fonctionnalités avancées" color="#d29f9f" meeting="false" start="2026-06-08" duration="8" complete="100" expand="true">
+      <task id="22" name="QR code de check-in" color="#d29f9f" meeting="false" start="2026-06-08" duration="2" complete="100"/>
+      <task id="23" name="Module chatbot / assistance" color="#d29f9f" meeting="false" start="2026-06-10" duration="2" complete="100"/>
+      <task id="24" name="Paiement et suivi des factures" color="#d29f9f" meeting="false" start="2026-06-12" duration="2" complete="100"/>
+      <task id="25" name="Automatisation n8n et notifications" color="#d29f9f" meeting="false" start="2026-06-16" duration="2" complete="100"/>
+    </task>
+    <task id="26" name="Sécurité et ajustements des rôles" color="#d7c46f" meeting="false" start="2026-06-17" duration="3" complete="100" expand="true">
+      <task id="27" name="Restriction du signup aux voyageurs" color="#d7c46f" meeting="false" start="2026-06-17" duration="1" complete="100"/>
+      <task id="28" name="Comptes prédéfinis pour tous les rôles" color="#d7c46f" meeting="false" start="2026-06-18" duration="1" complete="100"/>
+      <task id="29" name="Vérification des interfaces par rôle" color="#d7c46f" meeting="false" start="2026-06-19" duration="1" complete="100"/>
+    </task>
+    <task id="30" name="Tests, correction et préparation finale" color="#b58ad6" meeting="false" start="2026-06-18" duration="4" complete="100" expand="true">
+      <task id="31" name="Tests de connexion et parcours utilisateurs" color="#b58ad6" meeting="false" start="2026-06-18" duration="1" complete="100"/>
+      <task id="32" name="Correction bugs et polish UI" color="#b58ad6" meeting="false" start="2026-06-19" duration="1" complete="100"/>
+      <task id="33" name="Préparation démonstration et jeu de données" color="#b58ad6" meeting="false" start="2026-06-22" duration="1" complete="100"/>
+      <task id="34" name="Livraison finale du projet" color="#b58ad6" meeting="true" start="2026-06-23" duration="0" complete="100"/>
+    </task>
+  </tasks>
+  <resources>
+    <resource id="1" name="Développeur principal" function="Default:1" contacts="" phone=""/>
+    <resource id="2" name="Encadrant / validation" function="Default:2" contacts="" phone=""/>
+  </resources>
+  <allocations>
+    <allocation task-id="1" resource-id="1" function="Default:1" responsible="true" load="100"/>
+    <allocation task-id="5" resource-id="1" function="Default:1" responsible="true" load="100"/>
+    <allocation task-id="9" resource-id="1" function="Default:1" responsible="true" load="100"/>
+    <allocation task-id="14" resource-id="1" function="Default:1" responsible="true" load="100"/>
+    <allocation task-id="21" resource-id="1" function="Default:1" responsible="true" load="100"/>
+    <allocation task-id="26" resource-id="1" function="Default:1" responsible="true" load="100"/>
+    <allocation task-id="30" resource-id="1" function="Default:1" responsible="true" load="100"/>
+    <allocation task-id="34" resource-id="2" function="Default:2" responsible="true" load="100"/>
+  </allocations>
+  <vacations/>
+  <previous/>
+  <roles roleset-name="Default"/>
+</project>

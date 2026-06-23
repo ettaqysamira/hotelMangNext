@@ -22,33 +22,83 @@ async function main() {
   await prisma.subscription.deleteMany();
   await prisma.organization.deleteMany();
 
-  // 2. Create default Admin & Agent accounts
+  // 2. Create default demo accounts for every role
   console.log('Creating user accounts...');
-  const adminHash = await bcrypt.hash('Admin@1234', 12);
-  const admin = await prisma.user.create({
-    data: {
+  const demoAccounts = [
+    {
       email: 'admin@hostel.com',
-      passwordHash: adminHash,
+      password: 'Admin@1234',
       firstName: 'Super',
       lastName: 'Admin',
       role: Role.SUPER_ADMIN,
       phone: '+212 6 00 00 00 01'
-    }
-  });
-  console.log(`Created admin: ${admin.email} (Password: Admin@1234)`);
-
-  const agentHash = await bcrypt.hash('password123', 12);
-  const agent = await prisma.user.create({
-    data: {
-      email: 'agent@hostel.com',
-      passwordHash: agentHash,
+    },
+    {
+      email: 'manager@hostel.com',
+      password: 'Manager@1234',
+      firstName: 'Meryem',
+      lastName: 'Manager',
+      role: Role.MANAGER,
+      phone: '+212 6 00 00 00 02'
+    },
+    {
+      email: 'reception@hostel.com',
+      password: 'Reception@1234',
+      firstName: 'Nadia',
+      lastName: 'Reception',
+      role: Role.RECEPTIONIST,
+      phone: '+212 6 00 00 00 03'
+    },
+    {
+      email: 'guest@hostel.com',
+      password: 'Guest@1234',
+      firstName: 'Yassine',
+      lastName: 'Voyageur',
+      role: Role.GUEST,
+      phone: '+212 6 00 00 00 04'
+    },
+    {
+      email: 'maintenance@hostel.com',
+      password: 'Maintenance@1234',
       firstName: 'Youssef',
       lastName: 'Reparateur',
       role: Role.MAINTENANCE,
-      phone: '+212 6 00 00 00 02'
+      phone: '+212 6 00 00 00 05'
+    },
+    {
+      email: 'accountant@hostel.com',
+      password: 'Accountant@1234',
+      firstName: 'Karim',
+      lastName: 'Comptable',
+      role: Role.ACCOUNTANT,
+      phone: '+212 6 00 00 00 06'
     }
-  });
-  console.log(`Created maintenance agent: ${agent.email} (Password: password123)`);
+  ];
+
+  for (const account of demoAccounts) {
+    const passwordHash = await bcrypt.hash(account.password, 12);
+    const user = await prisma.user.create({
+      data: {
+        email: account.email,
+        passwordHash,
+        firstName: account.firstName,
+        lastName: account.lastName,
+        role: account.role,
+        phone: account.phone
+      }
+    });
+
+    if (account.role === Role.GUEST) {
+      await prisma.guestProfile.create({
+        data: {
+          userId: user.id,
+          preferences: {}
+        }
+      });
+    }
+
+    console.log(`Created ${account.role}: ${account.email} (Password: ${account.password})`);
+  }
 
   // 3. Create Moroccan Hostels
   console.log('Creating hostels...');

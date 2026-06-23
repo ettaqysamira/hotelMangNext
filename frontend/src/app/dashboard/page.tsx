@@ -33,6 +33,10 @@ const getSidebarItems = (role: string) => {
         { id: 'list', label: 'Enregistrements', icon: <Layers size={18} /> },
       ];
     case 'MANAGER':
+      return [
+        { id: 'analytics', label: 'Statistiques & Plan', icon: <BarChart2 size={18} /> },
+        { id: 'rooms', label: 'Gerer Chambres', icon: <Bed size={18} /> },
+      ];
     case 'SUPER_ADMIN':
       return [
         { id: 'analytics', label: 'Statistiques & Plan', icon: <BarChart2 size={18} /> },

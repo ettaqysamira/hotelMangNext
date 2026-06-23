@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../../hooks/use-auth';
-import { Building2, Mail, Lock, User, Phone, Briefcase } from 'lucide-react';
+import { Building2, Mail, Lock, User, Phone } from 'lucide-react';
 
 export default function Register() {
   const { registerUser } = useAuth();
@@ -12,7 +12,6 @@ export default function Register() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState('GUEST');
   
   const [errorMsg, setErrorMsg] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,8 +27,7 @@ export default function Register() {
         password,
         firstName,
         lastName,
-        phone,
-        role
+        phone
       });
     } catch (err: any) {
       setErrorMsg(err.message || 'Erreur lors de la création de compte.');
@@ -136,7 +134,7 @@ export default function Register() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
             <div className="flex flex-col gap-1.5">
               <label className="text-[10px] font-bold text-[#5a6478] uppercase tracking-wider">
                 Mot de passe
@@ -154,26 +152,6 @@ export default function Register() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold text-[#5a6478] uppercase tracking-wider">
-                Rôle (Mode Démo / Jury)
-              </label>
-              <div className="relative">
-                <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#5a6478]" size={16} />
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-[#080b12] border border-[#1c2333] focus:border-[#00d4aa]/80 rounded-xl pl-10 pr-4 py-3 text-xs text-[#e8edf5] outline-none transition-all focus:ring-1 focus:ring-[#00d4aa]/30 appearance-none"
-                >
-                  <option value="GUEST">Voyageur (Guest)</option>
-                  <option value="RECEPTIONIST">Réceptionniste</option>
-                  <option value="MANAGER">Hostel Manager</option>
-                  <option value="MAINTENANCE">Agent Maintenance / Ménage</option>
-                  <option value="ACCOUNTANT">Comptable</option>
-                  <option value="SUPER_ADMIN">Super Admin</option>
-                </select>
-              </div>
-            </div>
           </div>
 
           <button

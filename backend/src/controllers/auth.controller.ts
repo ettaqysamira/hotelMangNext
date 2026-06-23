@@ -39,7 +39,7 @@ const getCookie = (req: Request, name: string): string | undefined => {
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password, firstName, lastName, phone, role } = req.body;
+    const { email, password, firstName, lastName, phone } = req.body;
 
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({
@@ -66,7 +66,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
           firstName,
           lastName,
           phone,
-          role: role || 'GUEST'
+          role: 'GUEST'
         }
       });
 
